@@ -1,5 +1,5 @@
 angular
-  .module('jwtApp').config(function($urlRouterProvider, $stateProvider){
+  .module('jwtApp').config(function($urlRouterProvider, $stateProvider, $httpProvider){
 
     $urlRouterProvider.otherwise('/');
 
@@ -20,7 +20,14 @@ angular
     .state('logout', {
       url: '/logout',
       controller: 'LogoutCtrl'
+    })
+    .state('login', {
+      url: '/login',
+      templateUrl: '/views/login.html',
+      controller: 'LoginCtrl'
     });
 
+    $httpProvider.interceptors.push('authInterceptor');
 
-  });
+  })
+  .constant('API_URL', 'http://localhost:3000/');

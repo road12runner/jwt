@@ -10,7 +10,7 @@ angular.module('jwtApp')
         cachedToken = token;
         storage.setItem('userToken', token);
       },
-      getToken() {
+      getToken: function() {
         return (cachedToken) ? cachedToken : storage.getItem('userToken');
       },
       isAuthenticated: function(){

@@ -1,5 +1,3 @@
 {
-  "directory": "bower_components",
-  "proxy": "http://proxy-us-austin.gemalto.com:8080",
-  "https-proxy":"http://proxy-us-austin.gemalto.com:8080"
+  "directory": "bower_components"
 }

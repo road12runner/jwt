@@ -7,13 +7,16 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var User = require('./models/User.js');
 var mongoose = require('mongoose');
+var request = require('request');
+
+var moment = require('moment');
 
 //var jwt = require('./services/jwt');
 var jwt = require('jwt-simple');
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 
-
+var facebookAuth = require('./services/facebookAuth');
 
 var app = express();
 
@@ -139,11 +142,59 @@ app.post('/register',  passport.authenticate('local-register'),function(req, res
   createSendToken(req.user, res);
 });
 
+app.post('/auth/google', function(req, res, next) {
+  var url = "https://accounts.google.com/o/oauth2/token";
+  var apiUrl = 'https://www.googleapis.com/plus/v1/people/me/openIdConnect';
+
+  console.log('token', req.body.code);
+  var params ={
+    client_id: req.body.clientId,
+    redirect_uri: req.body.redirectUri,
+    code: req.body.code,
+    grant_type: 'authorization_code',
+    client_secret: 'PWHip6PRUz8GdAd1dzKD9PUx'
+  };
+  request.post(url, {json: true, form : params}, function(err, response, token){
+    if (err) {
+      console.log(err);
+      return res.status(500);
+    }
+    var accessToken = token.access_token;
+    var headers  = {
+      Authorization: 'Bearer ' + accessToken
+    };
+
+    request.get({url : apiUrl, headers: headers, json : true}, function(err, response, profile){
+      if (err) throw err;
+      User.findOne({googleId: profile.sub}, function(err, foundUser){
+        if (foundUser)
+          return createSendToken(foundUser, res);
+
+        var newUser = new User();
+        newUser.googleId = profile.sub;
+        newUser.displayName = profile.name;
+        newUser.save(function(err){
+          if (err) next(err);
+          return createSendToken(newUser, res);
+        });
+      });
+      return res.status(200);
+    });
+
+
+  });
+
+});
+
+
+
+app.post('/auth/facebook', facebookAuth);
 
 function createSendToken(user, res) {
 
   var payload = {
-    sub : user.id
+    sub : user.id,
+    exp: moment().add(10, 'days').unix()
   };
 
   var token = jwt.encode(payload, 'shh..');
